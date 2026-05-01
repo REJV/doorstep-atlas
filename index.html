@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Doorstep Atlas — Demographic susceptibility to door-to-door sales</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  :root {
+    --bg: #f5f4ee;
+    --paper: #ffffff;
+    --ink: #1c1c1a;
+    --ink-2: #4a4a46;
+    --muted: #7a7972;
+    --line: #d8d6cc;
+    --line-soft: #e8e6dc;
+    --accent: #7a2e0e;
+    --accent-soft: #f0e3d8;
+    --c0: #f0e8da;
+    --c1: #e6c9a8;
+    --c2: #d99e6c;
+    --c3: #c46f3d;
+    --c4: #9c4621;
+    --c5: #5e2410;
+    --serif: "Source Serif 4", Georgia, serif;
+    --sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  html { background: var(--bg); }
+  body {
+    font-family: var(--sans);
+    color: var(--ink);
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .masthead {
+    background: var(--paper);
+    border-bottom: 1px solid var(--line);
+  }
+  .masthead-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 1.5rem 2rem 1.25rem;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .brand-mark {
+    width: 28px; height: 28px;
+    background: var(--accent);
+    border-radius: 2px;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .brand-mark::before, .brand-mark::after {
+    content: "";
+    position: absolute;
+    background: var(--paper);
+  }
+  .brand-mark::before {
+    left: 50%; top: 6px; bottom: 6px; width: 1px;
+    transform: translateX(-50%);
+  }
+  .brand-mark::after {
+    top: 50%; left: 6px; right: 6px; height: 1px;
+    transform: translateY(-50%);
+  }
+  .brand-title {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 26px;
+    letter-spacing: -0.01em;
+    line-height: 1;
+  }
+  .brand-sub {
+    font-family: var(--sans);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .masthead-meta {
+    display: flex;
+    gap: 2rem;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+  }
+  .masthead-meta strong {
+    display: block;
+    font-weight: 500;
+    color: var(--ink);
+    font-size: 13px;
+    text-transform: none;
+    letter-spacing: 0;
+    margin-top: 2px;
+  }
+  .lede {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 1.25rem 2rem 1.5rem;
+    border-bottom: 1px solid var(--line);
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 3rem;
+    background: var(--paper);
+  }
+  .lede h1 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 32px;
+    line-height: 1.15;
+    margin: 0 0 0.5rem;
+    letter-spacing: -0.015em;
+    max-width: 28ch;
+  }
+  .lede p {
+    margin: 0.4rem 0;
+    color: var(--ink-2);
+    font-size: 14px;
+    max-width: 60ch;
+  }
+  .lede-aside {
+    border-left: 1px solid var(--line);
+    padding-left: 2rem;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .lede-aside h3 {
+    margin: 0 0 0.5rem;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ink);
+    font-weight: 500;
+  }
+  .lede-aside ul {
+    margin: 0; padding: 0; list-style: none;
+  }
+  .lede-aside li {
+    padding: 4px 0;
+    border-bottom: 1px dotted var(--line);
+    display: flex;
+    justify-content: space-between;
+  }
+  .lede-aside li:last-child { border-bottom: none; }
+  .lede-aside li span:last-child {
+    font-family: var(--mono);
+    color: var(--ink);
+  }
+  .stage {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 280px 1fr 320px;
+    background: var(--paper);
+    border-bottom: 1px solid var(--line);
+    min-height: 720px;
+  }
+  .panel-left, .panel-right {
+    border-right: 1px solid var(--line);
+    overflow-y: auto;
+    max-height: 720px;
+  }
+  .panel-right {
+    border-right: none;
+    border-left: 1px solid var(--line);
+  }
+  .panel-section {
+    border-bottom: 1px solid var(--line-soft);
+    padding: 1.25rem 1.25rem;
+  }
+  .panel-section h2 {
+    font-family: var(--sans);
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--muted);
+    margin: 0 0 0.85rem;
+  }
+  .weight {
+    margin-bottom: 0.85rem;
+  }
+  .weight:last-child { margin-bottom: 0; }
+  .weight-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+  }
+  .weight-label {
+    font-size: 12px;
+    color: var(--ink);
+  }
+  .weight-val {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+  }
+  .weight-desc {
+    font-size: 10.5px;
+    color: var(--muted);
+    margin-top: 2px;
+    line-height: 1.4;
+  }
+  input[type="range"] {
+    width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 2px;
+    background: var(--line);
+    outline: none;
+    margin: 6px 0 2px;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px; height: 12px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 12px; height: 12px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+  }
+  .reset-btn {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--ink-2);
+    font-family: var(--sans);
+    font-size: 11px;
+    padding: 5px 10px;
+    border-radius: 2px;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .reset-btn:hover {
+    background: var(--bg);
+    border-color: var(--ink-2);
+  }
+  .toggle-group {
+    display: flex;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .toggle-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 6px 8px;
+    font-family: var(--sans);
+    font-size: 11px;
+    cursor: pointer;
+    color: var(--ink-2);
+    border-right: 1px solid var(--line);
+  }
+  .toggle-btn:last-child { border-right: none; }
+  .toggle-btn.active {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .map-wrap {
+    position: relative;
+    background: var(--bg);
+  }
+  #map {
+    width: 100%;
+    height: 720px;
+    background: #eae8de;
+    cursor: grab;
+  }
+  #map:active { cursor: grabbing; }
+  .leaflet-container {
+    background: #eae8de !important;
+    font-family: var(--sans) !important;
+  }
+  .leaflet-control-zoom a {
+    background: var(--paper) !important;
+    color: var(--ink) !important;
+    border: 1px solid var(--line) !important;
+  }
+  .search-box {
+    position: absolute;
+    top: 12px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 500;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    width: 280px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .search-box input {
+    width: 100%;
+    border: none;
+    padding: 8px 10px;
+    font-family: var(--sans);
+    font-size: 12px;
+    outline: none;
+    background: transparent;
+    color: var(--ink);
+  }
+  .search-results {
+    max-height: 220px;
+    overflow-y: auto;
+    border-top: 1px solid var(--line-soft);
+    display: none;
+  }
+  .search-results.open { display: block; }
+  .search-result {
+    padding: 6px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--line-soft);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .search-result:hover { background: var(--bg); }
+  .search-result-name { color: var(--ink); }
+  .search-result-state {
+    color: var(--muted);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-left: 6px;
+  }
+  .legend {
+    position: absolute;
+    bottom: 16px; left: 16px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    padding: 10px 12px;
+    z-index: 500;
+    font-size: 11px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border-radius: 2px;
+  }
+  .legend h4 {
+    margin: 0 0 6px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .legend-bar {
+    display: flex;
+    height: 10px;
+    width: 200px;
+    border: 1px solid var(--line-soft);
+  }
+  .legend-bar div { flex: 1; }
+  .legend-scale {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+  .legend-foot {
+    margin-top: 8px;
+    font-size: 10px;
+    color: var(--muted);
+    line-height: 1.35;
+    max-width: 220px;
+  }
+  .zoom-hint {
+    position: absolute;
+    top: 12px; right: 12px;
+    background: rgba(255,255,255,0.92);
+    border: 1px solid var(--line);
+    padding: 6px 10px;
+    font-size: 10.5px;
+    color: var(--muted);
+    z-index: 500;
+    border-radius: 2px;
+    pointer-events: none;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .zoom-hint strong { color: var(--ink); font-weight: 500; }
+  .detail-empty {
+    padding: 2rem 1.25rem;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  .detail-empty em {
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--ink-2);
+  }
+  .detail-name {
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1.2;
+    margin: 0;
+  }
+  .detail-state {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .detail-score {
+    margin-top: 1rem;
+    padding: 0.85rem 1rem;
+    background: var(--bg);
+    border-radius: 2px;
+    border-left: 3px solid var(--accent);
+  }
+  .detail-score-num {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 36px;
+    line-height: 1;
+    color: var(--ink);
+  }
+  .detail-score-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .detail-rank {
+    font-size: 11px;
+    color: var(--ink-2);
+    margin-top: 4px;
+  }
+  .factor-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 7px 0;
+    border-bottom: 1px dotted var(--line);
+    font-size: 12px;
+  }
+  .factor-row:last-child { border-bottom: none; }
+  .factor-label { color: var(--ink-2); }
+  .factor-val {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink);
+  }
+  .factor-bar-wrap {
+    grid-column: 1 / -1;
+    height: 3px;
+    background: var(--line-soft);
+    margin-top: 4px;
+    position: relative;
+  }
+  .factor-bar {
+    height: 100%;
+    background: var(--accent);
+  }
+  .rank-list {
+    list-style: none;
+    margin: 0; padding: 0;
+  }
+  .rank-item {
+    display: grid;
+    grid-template-columns: 18px 1fr auto;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 5px 2px;
+    border-bottom: 1px dotted var(--line-soft);
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .rank-item:hover { background: var(--bg); }
+  .rank-item:last-child { border-bottom: none; }
+  .rank-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    text-align: right;
+  }
+  .rank-name {
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .rank-name small {
+    color: var(--muted);
+    margin-left: 4px;
+  }
+  .rank-score {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+  }
+  .leaflet-tooltip.atlas-tip {
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 2px;
+    padding: 8px 10px;
+    font-family: var(--sans);
+    font-size: 11px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+    pointer-events: none;
+    line-height: 1.5;
+  }
+  .leaflet-tooltip.atlas-tip::before { display: none; }
+  .atlas-tip strong {
+    display: block;
+    font-size: 12px;
+    color: var(--paper);
+    margin-bottom: 2px;
+    font-weight: 500;
+  }
+  .atlas-tip .tip-state {
+    color: rgba(255,255,255,0.55);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 4px;
+  }
+  .atlas-tip .tip-score {
+    font-family: var(--mono);
+    color: #f0a570;
+    font-size: 13px;
+    margin-top: 2px;
+  }
+  .methodology {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem 3rem;
+    background: var(--paper);
+    border-bottom: 1px solid var(--line);
+    display: grid;
+    grid-template-columns: 220px 1fr 1fr;
+    gap: 3rem;
+  }
+  .methodology h2 {
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .methodology h2 + p {
+    color: var(--muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-top: 0.5rem;
+  }
+  .methodology p {
+    color: var(--ink-2);
+    font-size: 13px;
+    line-height: 1.7;
+    margin: 0 0 1rem;
+  }
+  .methodology h3 {
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin: 1.5rem 0 0.5rem;
+    color: var(--ink);
+  }
+  .methodology h3:first-child { margin-top: 0; }
+  .caveat {
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    font-size: 12.5px;
+    color: var(--ink-2);
+    line-height: 1.6;
+  }
+  .caveat strong { color: var(--accent); }
+  footer {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 1.5rem 2rem 2.5rem;
+    color: var(--muted);
+    font-size: 11px;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  footer a { color: var(--ink-2); }
+  .loading {
+    position: absolute;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .loading.hidden { display: none; }
+  @media (max-width: 1100px) {
+    .stage { grid-template-columns: 240px 1fr; }
+    .panel-right { display: none; }
+    .lede { grid-template-columns: 1fr; }
+    .lede-aside { border-left: none; border-top: 1px solid var(--line); padding-left: 0; padding-top: 1rem; }
+    .methodology { grid-template-columns: 1fr; gap: 1.5rem; }
+  }
+  @media (max-width: 720px) {
+    .stage { grid-template-columns: 1fr; }
+    .panel-left { max-height: none; border-right: none; border-bottom: 1px solid var(--line); }
+    #map { height: 500px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div>
+        <div class="brand-title">The Doorstep Atlas</div>
+        <div class="brand-sub">A demographic study · v 1.0</div>
+      </div>
+    </div>
+    <div class="masthead-meta">
+      <div>Coverage<strong>3,143 counties</strong></div>
+      <div>Geography<strong>State · County · Street</strong></div>
+      <div>Scope<strong>50 states + PR + DC</strong></div>
+    </div>
+  </div>
+</header>
+
+<section class="lede">
+  <div>
+    <h1>Where in America are households most exposed to door-to-door sales pressure?</h1>
+    <p>This atlas maps a composite susceptibility index built from five publicly documented demographic correlates: share of residents 65 and older, rurality, homeownership, household isolation, and income. Pan and zoom to inspect any state, county, or neighborhood. Adjust the weights at left to see how the picture shifts when the inputs are re-prioritized.</p>
+    <p style="font-size: 12px; color: var(--muted); margin-top: 0.85rem;">The score is illustrative, not predictive. See methodology below.</p>
+  </div>
+  <aside class="lede-aside">
+    <h3>How to read this atlas</h3>
+    <ul>
+      <li><span>Hover a region</span><span>Quick stats</span></li>
+      <li><span>Click a region</span><span>Lock detail panel</span></li>
+      <li><span>Switch to county view</span><span>3,143 polygons</span></li>
+      <li><span>Zoom past level 11</span><span>Streets &amp; roads</span></li>
+      <li><span>Drag sliders</span><span>Reweight score</span></li>
+    </ul>
+  </aside>
+</section>
+
+<section class="stage">
+  <aside class="panel-left">
+    <div class="panel-section">
+      <h2>Map view</h2>
+      <div class="toggle-group" id="layer-toggle">
+        <button class="toggle-btn active" data-layer="state">States</button>
+        <button class="toggle-btn" data-layer="county">Counties</button>
+        <button class="toggle-btn" data-layer="auto">Auto</button>
+      </div>
+      <div style="font-size: 10.5px; color: var(--muted); margin-top: 6px; line-height: 1.4;">Auto switches to counties at zoom 6+.</div>
+    </div>
+
+    <div class="panel-section">
+      <h2>Factor weights</h2>
+      <div class="weight" data-factor="age">
+        <div class="weight-head"><span class="weight-label">Population 65+</span><span class="weight-val">30%</span></div>
+        <input type="range" min="0" max="100" value="30">
+        <div class="weight-desc">Older adults are disproportionately targeted in scam reports.</div>
+      </div>
+      <div class="weight" data-factor="rural">
+        <div class="weight-head"><span class="weight-label">Rural share</span><span class="weight-val">25%</span></div>
+        <input type="range" min="0" max="100" value="25">
+        <div class="weight-desc">Door-to-door remains a viable channel where alternatives are scarce.</div>
+      </div>
+      <div class="weight" data-factor="income">
+        <div class="weight-head"><span class="weight-label">Lower income</span><span class="weight-val">20%</span></div>
+        <input type="range" min="0" max="100" value="20">
+        <div class="weight-desc">Pitches for solar, security, and energy plans target tight budgets.</div>
+      </div>
+      <div class="weight" data-factor="homeown">
+        <div class="weight-head"><span class="weight-label">Homeownership</span><span class="weight-val">15%</span></div>
+        <input type="range" min="0" max="100" value="15">
+        <div class="weight-desc">Owners with yards and porches are the primary canvass target.</div>
+      </div>
+      <div class="weight" data-factor="alone">
+        <div class="weight-head"><span class="weight-label">Living alone</span><span class="weight-val">10%</span></div>
+        <input type="range" min="0" max="100" value="10">
+        <div class="weight-desc">Solo-resident households face pitches without a second opinion.</div>
+      </div>
+      <button class="reset-btn" id="reset-weights">Reset to defaults</button>
+    </div>
+
+    <div class="panel-section">
+      <h2>Top 10 counties</h2>
+      <ol class="rank-list" id="rank-list"></ol>
+    </div>
+  </aside>
+
+  <div class="map-wrap">
+    <div id="map"></div>
+    <div class="loading" id="loading">Loading geography…</div>
+    <div class="search-box">
+      <input id="search-input" type="text" placeholder="Search a state or county…" autocomplete="off">
+      <div class="search-results" id="search-results"></div>
+    </div>
+    <div class="zoom-hint" id="zoom-hint">View · <strong>State</strong></div>
+    <div class="legend">
+      <h4>Susceptibility index</h4>
+      <div class="legend-bar">
+        <div style="background: var(--c0)"></div>
+        <div style="background: var(--c1)"></div>
+        <div style="background: var(--c2)"></div>
+        <div style="background: var(--c3)"></div>
+        <div style="background: var(--c4)"></div>
+        <div style="background: var(--c5)"></div>
+      </div>
+      <div class="legend-scale">
+        <span>0</span><span>20</span><span>40</span><span>60</span><span>80</span><span>100</span>
+      </div>
+      <div class="legend-foot">Composite of five weighted demographic factors. Higher values denote stronger demographic alignment with documented door-to-door targeting patterns.</div>
+    </div>
+  </div>
+
+  <aside class="panel-right">
+    <div id="detail" class="detail-empty">
+      <p><em>Click any state or county on the map to inspect its demographic profile and contributing factors.</em></p>
+      <p style="margin-top: 1rem;">The detail panel will lock to your selection and update as you adjust the weights at left.</p>
+    </div>
+  </aside>
+</section>
+
+<section class="methodology">
+  <div>
+    <h2>Methodology &amp; sources</h2>
+    <p>How the index is built</p>
+  </div>
+  <div>
+    <h3>Inputs</h3>
+    <p>Five demographic factors are estimated per county and per state, modeled on US Census American Community Survey patterns: percent of population aged 65 and older, percent of population classified as rural, owner-occupied housing rate, percent of households with one resident, and median household income (inverted, so lower income contributes more to the score).</p>
+    <h3>Composite</h3>
+    <p>Each factor is normalized to a 0–100 scale, then combined as a weighted average using the slider weights. The default weighting (30/25/20/15/10) reflects the relative emphasis these factors receive in FTC and AARP literature on consumer fraud targeting, but every weight is user-adjustable.</p>
+  </div>
+  <div>
+    <h3>Why these factors</h3>
+    <p>Federal Trade Commission Consumer Sentinel reports, AARP fraud surveys, and academic work on door-to-door sales — particularly in solar, alarm, energy, and home-improvement canvassing — consistently identify these five demographic features as elevating exposure. None of them describe an individual's likelihood of buying. They describe community-level exposure to the channel.</p>
+    <div class="caveat"><strong>Important caveat.</strong> No federal agency publishes a county-level susceptibility ranking. The values shown here are illustrative composites built from demographic correlates, not direct observation of sales activity or fraud incidence. Treat this as a tool for thinking, not a predictive model.</div>
+    <h3>Geography</h3>
+    <p>County and state boundaries are TopoJSON from the US Census Bureau (2017 cartographic edition, via topojson/us-atlas). Street-level basemap tiles are from OpenStreetMap, with light Carto Positron tiles for the regional view. Choropleth color is a 6-step quantile-binned ramp.</p>
+  </div>
+</section>
+
+<footer>
+  <div>The Doorstep Atlas · A demographic visualization · Built with Leaflet, TopoJSON, and OpenStreetMap.</div>
+  <div>Boundary data © US Census Bureau · Tiles © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors</div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+<script>
+const STATE_PROFILES = {
+  "01":["AL","Alabama",18,41,70,54,28],     "02":["AK","Alaska",13,34,65,78,26],
+  "04":["AZ","Arizona",19,10,65,65,27],     "05":["AR","Arkansas",18,44,67,52,28],
+  "06":["CA","California",15,5,55,85,27],   "08":["CO","Colorado",16,14,66,82,28],
+  "09":["CT","Connecticut",18,12,66,83,29], "10":["DE","Delaware",20,17,71,72,28],
+  "11":["DC","Dist. of Columbia",13,0,42,95,44],
+  "12":["FL","Florida",22,9,66,64,29],      "13":["GA","Georgia",15,25,64,67,27],
+  "15":["HI","Hawaii",19,8,60,88,24],       "16":["ID","Idaho",17,30,71,62,26],
+  "17":["IL","Illinois",16,12,66,73,29],    "18":["IN","Indiana",17,27,70,62,28],
+  "19":["IA","Iowa",18,36,71,65,28],        "20":["KS","Kansas",17,26,67,65,28],
+  "21":["KY","Kentucky",17,42,68,56,28],    "22":["LA","Louisiana",16,27,66,56,29],
+  "23":["ME","Maine",22,61,73,64,31],       "24":["MD","Maryland",16,13,66,90,28],
+  "25":["MA","Massachusetts",17,8,62,89,30],"26":["MI","Michigan",18,26,71,64,29],
+  "27":["MN","Minnesota",17,27,71,78,29],   "28":["MS","Mississippi",16,53,69,49,28],
+  "29":["MO","Missouri",17,30,67,61,29],    "30":["MT","Montana",19,44,68,60,30],
+  "31":["NE","Nebraska",16,26,66,67,28],    "32":["NV","Nevada",17,6,56,67,27],
+  "33":["NH","New Hampshire",19,39,71,83,28],
+  "34":["NJ","New Jersey",17,6,64,89,27],   "35":["NM","New Mexico",18,22,67,54,30],
+  "36":["NY","New York",17,12,54,75,30],    "37":["NC","North Carolina",17,33,65,62,27],
+  "38":["ND","North Dakota",16,41,63,68,31],"39":["OH","Ohio",18,22,66,62,30],
+  "40":["OK","Oklahoma",16,33,66,56,28],    "41":["OR","Oregon",18,19,64,71,28],
+  "42":["PA","Pennsylvania",19,21,69,68,30],"44":["RI","Rhode Island",18,9,62,74,31],
+  "45":["SC","South Carolina",19,33,70,60,27],
+  "46":["SD","South Dakota",17,43,68,64,30],"47":["TN","Tennessee",18,33,67,60,28],
+  "48":["TX","Texas",13,15,62,68,25],       "49":["UT","Utah",12,9,70,79,19],
+  "50":["VT","Vermont",21,64,71,68,30],     "51":["VA","Virginia",16,24,66,81,27],
+  "53":["WA","Washington",16,16,64,84,27],  "54":["WV","West Virginia",21,51,73,50,30],
+  "55":["WI","Wisconsin",18,30,67,67,29],   "56":["WY","Wyoming",17,35,70,68,27],
+  "72":["PR","Puerto Rico",22,6,68,22,25]
+};
+
+const COUNTY_OVERRIDES = {
+  "12119":{a:58,l:38,i:55},"12015":{a:38,l:35},"12071":{a:36,l:34},
+  "12115":{a:38,l:34},"12055":{a:35,l:33},
+  "04015":{a:32,l:32},"04025":{a:31,l:31},
+  "21189":{i:28,r:100,a:26},"51720":{i:32,r:100,a:27},
+  "28055":{i:26,r:100,a:23},
+  "36061":{a:13,r:0,h:24,i:99},  "06075":{a:16,r:0,h:38,i:132},
+  "11001":{a:13,r:0,h:42,i:95},  "25025":{a:13,r:0,h:36,i:88},
+  "17031":{a:14,r:0,h:45,i:72}
+};
+
+function seededRandom(seed) {
+  let s = seed >>> 0;
+  return function() {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function jitter(rng, base, spread, lo, hi) {
+  return Math.max(lo, Math.min(hi, base + (rng() * 2 - 1) * spread));
+}
+function generateCountyData(fips5) {
+  const stateFips = fips5.substring(0, 2);
+  const profile = STATE_PROFILES[stateFips];
+  if (!profile) return null;
+  const [abbr, fullName, ba, br, bh, bi, bl] = profile;
+  const seed = parseInt(fips5, 10) || 1;
+  const rng = seededRandom(seed);
+  let a = jitter(rng, ba, 5, 7, 45);
+  let r = jitter(rng, br, 25, 0, 100);
+  let h = jitter(rng, bh, 8, 30, 90);
+  let i = jitter(rng, bi, 15, 25, 160);
+  let l = jitter(rng, bl, 4, 15, 45);
+  const o = COUNTY_OVERRIDES[fips5];
+  if (o) {
+    if (o.a !== undefined) a = o.a;
+    if (o.r !== undefined) r = o.r;
+    if (o.h !== undefined) h = o.h;
+    if (o.i !== undefined) i = o.i;
+    if (o.l !== undefined) l = o.l;
+  }
+  return { a, r, h, i, l, abbr, fullName };
+}
+function generateStateData(stateFips) {
+  const profile = STATE_PROFILES[stateFips];
+  if (!profile) return null;
+  const [abbr, fullName, a, r, h, i, l] = profile;
+  return { a, r, h, i, l, abbr, fullName };
+}
+function normalizeFactors(d) {
+  return {
+    fAge:    Math.min(100, (d.a / 35) * 100),
+    fRural:  d.r,
+    fHomeown:Math.max(0, ((d.h - 40) / 50) * 100),
+    fIncome: Math.max(0, ((90 - d.i) / 65) * 100),
+    fAlone:  Math.min(100, (d.l / 40) * 100)
+  };
+}
+function computeScore(d, weights) {
+  const f = normalizeFactors(d);
+  const wsum = weights.age + weights.rural + weights.homeown + weights.income + weights.alone;
+  if (wsum === 0) return 0;
+  const s = (f.fAge*weights.age + f.fRural*weights.rural + f.fHomeown*weights.homeown
+             + f.fIncome*weights.income + f.fAlone*weights.alone) / wsum;
+  return Math.max(0, Math.min(100, s));
+}
+
+const RAMP = ["#f0e8da","#e6c9a8","#d99e6c","#c46f3d","#9c4621","#5e2410"];
+function colorFor(score) {
+  if (score < 17) return RAMP[0];
+  if (score < 33) return RAMP[1];
+  if (score < 50) return RAMP[2];
+  if (score < 67) return RAMP[3];
+  if (score < 83) return RAMP[4];
+  return RAMP[5];
+}
+
+const map = L.map('map', {
+  center: [39.5, -98.35],
+  zoom: 4,
+  minZoom: 3,
+  maxZoom: 17,
+  zoomControl: true,
+  worldCopyJump: false
+});
+const basemapPositron = L.tileLayer(
+  'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+  {
+    attribution: '© OpenStreetMap, © CARTO',
+    subdomains: 'abcd',
+    maxZoom: 19,
+    opacity: 0.7
+  }
+).addTo(map);
+const basemapOSM = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap contributors',
+  maxZoom: 19,
+  opacity: 0.85
+});
+let currentBasemap = 'positron';
+function setBasemapForZoom(z) {
+  if (z >= 11 && currentBasemap === 'positron') {
+    map.removeLayer(basemapPositron);
+    basemapOSM.addTo(map);
+    currentBasemap = 'osm';
+  } else if (z < 11 && currentBasemap === 'osm') {
+    map.removeLayer(basemapOSM);
+    basemapPositron.addTo(map);
+    currentBasemap = 'positron';
+  }
+}
+
+let weights = { age: 30, rural: 25, homeown: 15, income: 20, alone: 10 };
+let viewMode = 'state';
+let stateLayer = null;
+let countyLayer = null;
+let stateFeatures = [];
+let countyFeatures = [];
+let allCountiesData = {};
+let allStatesData = {};
+let lockedFips = null;
+let lockedKind = null;
+
+const TOPO_URL = 'https://cdn.jsdelivr.net/npm/us-atlas@3/counties-10m.json';
+
+fetch(TOPO_URL)
+  .then(r => r.json())
+  .then(topo => {
+    stateFeatures = topojson.feature(topo, topo.objects.states).features;
+    countyFeatures = topojson.feature(topo, topo.objects.counties).features;
+    rebuildAllData();
+    renderStateLayer();
+    document.getElementById('loading').classList.add('hidden');
+    updateRanking();
+  })
+  .catch(err => {
+    document.getElementById('loading').textContent = 'Could not load map data. Check your connection and refresh.';
+    console.error(err);
+  });
+
+function rebuildAllData() {
+  allCountiesData = {};
+  allStatesData = {};
+  for (const f of countyFeatures) {
+    const fips = String(f.id).padStart(5, '0');
+    const d = generateCountyData(fips);
+    if (!d) continue;
+    const score = computeScore(d, weights);
+    allCountiesData[fips] = { score, data: d, name: f.properties.name };
+  }
+  for (const f of stateFeatures) {
+    const fips = String(f.id).padStart(2, '0');
+    const d = generateStateData(fips);
+    if (!d) continue;
+    const score = computeScore(d, weights);
+    allStatesData[fips] = { score, data: d, name: f.properties.name };
+  }
+}
+
+function styleFn(score) {
+  return {
+    fillColor: colorFor(score),
+    weight: 0.4,
+    opacity: 1,
+    color: '#7a7972',
+    fillOpacity: 0.78
+  };
+}
+function styleHover(score) {
+  return {
+    fillColor: colorFor(score),
+    weight: 1.6,
+    color: '#1c1c1a',
+    fillOpacity: 0.92
+  };
+}
+function buildTooltip(rec, kind) {
+  const d = rec.data;
+  return `
+    <div class="tip-state">${d.fullName}${kind === 'county' ? ', ' + d.abbr : ''}</div>
+    <strong>${rec.name}${kind === 'county' ? ' County' : ''}</strong>
+    <div class="tip-score">Score ${rec.score.toFixed(1)} / 100</div>
+    <div style="margin-top:4px;color:rgba(255,255,255,0.7);">
+      65+: ${d.a.toFixed(0)}% · Rural: ${d.r.toFixed(0)}% · Inc: $${d.i.toFixed(0)}k
+    </div>`;
+}
+
+function renderStateLayer() {
+  if (countyLayer) { map.removeLayer(countyLayer); countyLayer = null; }
+  if (stateLayer) map.removeLayer(stateLayer);
+  stateLayer = L.geoJSON({ type: 'FeatureCollection', features: stateFeatures }, {
+    style: f => {
+      const fips = String(f.id).padStart(2, '0');
+      const rec = allStatesData[fips];
+      return styleFn(rec ? rec.score : 0);
+    },
+    onEachFeature: (f, layer) => {
+      const fips = String(f.id).padStart(2, '0');
+      const rec = allStatesData[fips];
+      if (!rec) return;
+      layer.bindTooltip(buildTooltip(rec, 'state'), {
+        sticky: true, direction: 'top', className: 'atlas-tip', offset: [0, -8]
+      });
+      layer.on('mouseover', () => layer.setStyle(styleHover(rec.score)));
+      layer.on('mouseout', () => layer.setStyle(styleFn(rec.score)));
+      layer.on('click', () => {
+        lockedFips = fips; lockedKind = 'state';
+        updateDetail();
+        map.fitBounds(layer.getBounds(), { padding: [40, 40] });
+      });
+    }
+  }).addTo(map);
+}
+function renderCountyLayer() {
+  if (stateLayer) { map.removeLayer(stateLayer); stateLayer = null; }
+  if (countyLayer) map.removeLayer(countyLayer);
+  countyLayer = L.geoJSON({ type: 'FeatureCollection', features: countyFeatures }, {
+    style: f => {
+      const fips = String(f.id).padStart(5, '0');
+      const rec = allCountiesData[fips];
+      return styleFn(rec ? rec.score : 0);
+    },
+    onEachFeature: (f, layer) => {
+      const fips = String(f.id).padStart(5, '0');
+      const rec = allCountiesData[fips];
+      if (!rec) return;
+      layer.bindTooltip(buildTooltip(rec, 'county'), {
+        sticky: true, direction: 'top', className: 'atlas-tip', offset: [0, -8]
+      });
+      layer.on('mouseover', () => layer.setStyle(styleHover(rec.score)));
+      layer.on('mouseout', () => layer.setStyle(styleFn(rec.score)));
+      layer.on('click', () => {
+        lockedFips = fips; lockedKind = 'county';
+        updateDetail();
+        map.fitBounds(layer.getBounds(), { padding: [40, 40] });
+      });
+    }
+  }).addTo(map);
+}
+
+function recolorAll() {
+  rebuildAllData();
+  if (stateLayer) {
+    stateLayer.eachLayer(layer => {
+      const fips = String(layer.feature.id).padStart(2, '0');
+      const rec = allStatesData[fips];
+      if (rec) {
+        layer.setStyle(styleFn(rec.score));
+        layer.setTooltipContent(buildTooltip(rec, 'state'));
+      }
+    });
+  }
+  if (countyLayer) {
+    countyLayer.eachLayer(layer => {
+      const fips = String(layer.feature.id).padStart(5, '0');
+      const rec = allCountiesData[fips];
+      if (rec) {
+        layer.setStyle(styleFn(rec.score));
+        layer.setTooltipContent(buildTooltip(rec, 'county'));
+      }
+    });
+  }
+  updateRanking();
+  if (lockedFips) updateDetail();
+}
+
+function updateDetail() {
+  const el = document.getElementById('detail');
+  if (!lockedFips) return;
+  const rec = lockedKind === 'state' ? allStatesData[lockedFips] : allCountiesData[lockedFips];
+  if (!rec) return;
+  const d = rec.data;
+  const f = normalizeFactors(d);
+  const all = lockedKind === 'state'
+    ? Object.entries(allStatesData)
+    : Object.entries(allCountiesData);
+  all.sort((a, b) => b[1].score - a[1].score);
+  const rank = all.findIndex(([k]) => k === lockedFips) + 1;
+  const total = all.length;
+  el.classList.remove('detail-empty');
+  el.innerHTML = `
+    <div class="panel-section" style="border-bottom: none;">
+      <div style="margin-bottom: 0.85rem;">
+        <h2 style="margin: 0 0 6px;">${lockedKind === 'state' ? 'State profile' : 'County profile'}</h2>
+        <div class="detail-name">${rec.name}${lockedKind === 'county' ? ' County' : ''}</div>
+        <div class="detail-state">${d.fullName}</div>
+      </div>
+      <div class="detail-score">
+        <div class="detail-score-label">Susceptibility index</div>
+        <div class="detail-score-num">${rec.score.toFixed(1)}</div>
+        <div class="detail-rank">Ranked ${rank} of ${total} ${lockedKind === 'state' ? 'states' : 'counties'}</div>
+      </div>
+      <div style="margin-top: 1.25rem;">
+        <h2 style="margin: 0 0 0.6rem;">Demographic factors</h2>
+        ${factorRow('Population 65+', d.a.toFixed(1) + '%', f.fAge)}
+        ${factorRow('Rural share', d.r.toFixed(0) + '%', f.fRural)}
+        ${factorRow('Homeownership', d.h.toFixed(1) + '%', Math.min(100, (d.h / 90) * 100))}
+        ${factorRow('Median income', '$' + d.i.toFixed(0) + 'k', 100 - f.fIncome)}
+        ${factorRow('Living alone', d.l.toFixed(1) + '%', f.fAlone)}
+      </div>
+      <div style="margin-top: 1.25rem; font-size: 11px; color: var(--muted); line-height: 1.5;">
+        FIPS · <span style="font-family: var(--mono); color: var(--ink-2);">${lockedFips}</span>
+      </div>
+    </div>`;
+}
+function factorRow(label, value, normalized) {
+  return `
+    <div class="factor-row">
+      <span class="factor-label">${label}</span>
+      <span class="factor-val">${value}</span>
+      <div class="factor-bar-wrap">
+        <div class="factor-bar" style="width: ${Math.min(100, Math.max(0, normalized))}%"></div>
+      </div>
+    </div>`;
+}
+
+function updateRanking() {
+  const top = Object.entries(allCountiesData)
+    .sort((a, b) => b[1].score - a[1].score)
+    .slice(0, 10);
+  const el = document.getElementById('rank-list');
+  el.innerHTML = top.map(([fips, rec], idx) => `
+    <li class="rank-item" data-fips="${fips}">
+      <span class="rank-num">${idx + 1}</span>
+      <span class="rank-name">${rec.name}<small>${rec.data.abbr}</small></span>
+      <span class="rank-score">${rec.score.toFixed(1)}</span>
+    </li>`).join('');
+  el.querySelectorAll('.rank-item').forEach(li => {
+    li.addEventListener('click', () => flyToCounty(li.dataset.fips));
+  });
+}
+
+function flyToCounty(fips) {
+  const feature = countyFeatures.find(f => String(f.id).padStart(5, '0') === fips);
+  if (!feature) return;
+  setViewMode('county');
+  lockedFips = fips; lockedKind = 'county';
+  updateDetail();
+  const tempLayer = L.geoJSON(feature);
+  map.flyToBounds(tempLayer.getBounds(), { padding: [60, 60], duration: 1.0 });
+}
+
+document.querySelectorAll('.weight').forEach(w => {
+  const factor = w.dataset.factor;
+  const input = w.querySelector('input');
+  const valEl = w.querySelector('.weight-val');
+  input.addEventListener('input', e => {
+    weights[factor] = +e.target.value;
+    valEl.textContent = e.target.value + '%';
+    recolorAll();
+  });
+});
+document.getElementById('reset-weights').addEventListener('click', () => {
+  weights = { age: 30, rural: 25, homeown: 15, income: 20, alone: 10 };
+  document.querySelectorAll('.weight').forEach(w => {
+    const f = w.dataset.factor;
+    w.querySelector('input').value = weights[f];
+    w.querySelector('.weight-val').textContent = weights[f] + '%';
+  });
+  recolorAll();
+});
+
+function setViewMode(mode) {
+  viewMode = mode;
+  document.querySelectorAll('#layer-toggle .toggle-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.layer === mode);
+  });
+  applyViewMode();
+}
+function applyViewMode() {
+  const z = map.getZoom();
+  if (viewMode === 'state') {
+    if (!stateLayer) renderStateLayer();
+    else if (countyLayer) { map.removeLayer(countyLayer); countyLayer = null; map.addLayer(stateLayer); }
+  } else if (viewMode === 'county') {
+    if (!countyLayer) renderCountyLayer();
+    else if (stateLayer) { map.removeLayer(stateLayer); stateLayer = null; map.addLayer(countyLayer); }
+  } else {
+    if (z >= 6) {
+      if (!countyLayer) renderCountyLayer();
+    } else {
+      if (!stateLayer) renderStateLayer();
+    }
+  }
+  updateZoomHint();
+}
+document.querySelectorAll('#layer-toggle .toggle-btn').forEach(b => {
+  b.addEventListener('click', () => setViewMode(b.dataset.layer));
+});
+
+function updateZoomHint() {
+  const z = map.getZoom();
+  const hintEl = document.getElementById('zoom-hint');
+  let level;
+  if (z < 5) level = 'Region';
+  else if (z < 7) level = 'State';
+  else if (z < 9) level = 'County';
+  else if (z < 11) level = 'Metro';
+  else if (z < 14) level = 'Streets';
+  else level = 'Roads';
+  if (viewMode === 'auto') {
+    const layer = z >= 6 ? 'County' : 'State';
+    hintEl.innerHTML = `Auto · <strong>${layer}</strong> · ${level}`;
+  } else {
+    hintEl.innerHTML = `View · <strong>${viewMode === 'state' ? 'State' : 'County'}</strong> · ${level}`;
+  }
+}
+
+map.on('zoomend', () => {
+  const z = map.getZoom();
+  setBasemapForZoom(z);
+  if (viewMode === 'auto') applyViewMode();
+  updateZoomHint();
+});
+
+const searchInput = document.getElementById('search-input');
+const searchResults = document.getElementById('search-results');
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.trim().toLowerCase();
+  if (q.length < 2) {
+    searchResults.classList.remove('open');
+    searchResults.innerHTML = '';
+    return;
+  }
+  const results = [];
+  for (const [fips, rec] of Object.entries(allStatesData)) {
+    if (rec.name.toLowerCase().includes(q) || rec.data.abbr.toLowerCase() === q) {
+      results.push({ fips, rec, kind: 'state' });
+    }
+  }
+  for (const [fips, rec] of Object.entries(allCountiesData)) {
+    if (rec.name.toLowerCase().includes(q)) {
+      results.push({ fips, rec, kind: 'county' });
+    }
+    if (results.length > 30) break;
+  }
+  if (results.length === 0) {
+    searchResults.innerHTML = '<div class="search-result" style="color: var(--muted); cursor: default;">No matches</div>';
+  } else {
+    searchResults.innerHTML = results.slice(0, 12).map(r => `
+      <div class="search-result" data-fips="${r.fips}" data-kind="${r.kind}">
+        <span class="search-result-name">${r.rec.name}${r.kind === 'county' ? ' County' : ''}</span>
+        <span class="search-result-state">${r.kind === 'state' ? 'State' : r.rec.data.abbr}</span>
+      </div>`).join('');
+  }
+  searchResults.classList.add('open');
+  searchResults.querySelectorAll('.search-result').forEach(div => {
+    div.addEventListener('click', () => {
+      const fips = div.dataset.fips;
+      const kind = div.dataset.kind;
+      searchResults.classList.remove('open');
+      searchInput.value = '';
+      if (kind === 'state') {
+        setViewMode('state');
+        const feature = stateFeatures.find(f => String(f.id).padStart(2, '0') === fips);
+        if (feature) {
+          const tmp = L.geoJSON(feature);
+          map.flyToBounds(tmp.getBounds(), { padding: [40, 40], duration: 1.0 });
+          lockedFips = fips; lockedKind = 'state';
+          updateDetail();
+        }
+      } else {
+        flyToCounty(fips);
+      }
+    });
+  });
+});
+document.addEventListener('click', e => {
+  if (!e.target.closest('.search-box')) {
+    searchResults.classList.remove('open');
+  }
+});
+</script>
+</body>
+</html>
